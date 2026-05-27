@@ -2,6 +2,20 @@
 
 Generated command-line client for the Remnawave API.
 
+## Install
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/intezya/remnawave-cli/main/install.sh | sh
+```
+
+By default the installer downloads the latest GitHub Release and installs
+`remnawave-cli` into `/usr/local/bin` when possible, falling back to
+`~/.local/bin`. You can override the target with `INSTALL_DIR`:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/intezya/remnawave-cli/main/install.sh | INSTALL_DIR="$HOME/bin" sh
+```
+
 ## Usage
 
 ```sh
