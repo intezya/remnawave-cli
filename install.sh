@@ -138,8 +138,10 @@ if [ -n "$checksums_url" ]; then
 	verify_checksum "$archive" "$tmp_dir/checksums.txt"
 fi
 
-tar -xzf "$archive" -C "$tmp_dir"
-binary="$(find "$tmp_dir" -type f -name "$BIN_NAME" -perm -u+x | head -n 1)"
+extract_dir="$tmp_dir/extract"
+mkdir -p "$extract_dir"
+tar -xzf "$archive" -C "$extract_dir"
+binary="$(find "$extract_dir" -type f -name "${BIN_NAME}*" | head -n 1)"
 if [ -z "$binary" ]; then
 	echo "error: $BIN_NAME binary not found in release archive" >&2
 	exit 1
