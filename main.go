@@ -13,6 +13,7 @@ func main() {
 		Version:   version,
 	})
 
+	configureAgentOutput()
 	remnawaveApiRegister(false)
 
 	cli.Root.Execute()
