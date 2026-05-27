@@ -1,0 +1,83 @@
+name: Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build release artifacts
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Regenerate API client from Remnawave OpenAPI spec
+        run: ./scripts/generate.sh
+
+      - name: Test
+        run: go test ./...
+
+      - name: Build artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          VERSION="${GITHUB_REF_NAME:-dev}"
+          mkdir -p dist
+
+          for target in \
+            linux/amd64 \
+            linux/arm64 \
+            darwin/amd64 \
+            darwin/arm64 \
+            windows/amd64 \
+            windows/arm64
+          do
+            GOOS="${target%/*}"
+            GOARCH="${target#*/}"
+            NAME="remnawave-cli-${VERSION}-${GOOS}-${GOARCH}"
+            EXT=""
+            if [[ "$GOOS" == "windows" ]]; then
+              EXT=".exe"
+            fi
+
+            CGO_ENABLED=0 GOOS="$GOOS" GOARCH="$GOARCH" \
+              go build -trimpath -ldflags="-s -w -X main.version=${VERSION}" \
+              -o "dist/${NAME}${EXT}" .
+
+            if [[ "$GOOS" == "windows" ]]; then
+              (cd dist && zip -q "${NAME}.zip" "${NAME}${EXT}" && rm "${NAME}${EXT}")
+            else
+              (cd dist && tar -czf "${NAME}.tar.gz" "${NAME}" && rm "${NAME}")
+            fi
+          done
+
+          (cd dist && sha256sum * > checksums.txt)
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: remnawave-cli-${{ github.ref_name || github.sha }}
+          path: dist/*
+
+      - name: Publish GitHub Release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --title "$GITHUB_REF_NAME" \
+            --notes "Automated remnawave-cli release built from https://cdn.docs.rw/docs/openapi.json"

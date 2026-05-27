@@ -4,11 +4,13 @@ import (
 	"github.com/danielgtaylor/openapi-cli-generator/cli"
 )
 
+var version = "dev"
+
 func main() {
 	cli.Init(&cli.Config{
 		AppName:   "remnawave-cli",
 		EnvPrefix: "REMNAWAVE_CLI",
-		Version:   "1.0.0",
+		Version:   version,
 	})
 
 	remnawaveApiRegister(false)
